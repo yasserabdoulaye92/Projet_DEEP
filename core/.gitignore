@@ -1,0 +1,17 @@
+# Dossiers de compilation (à ne pas sauvegarder)
+Debug/
+Release/
+
+# Fichiers compilés et binaires
+*.o
+*.d
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+
+# Fichiers temporaires générés par CubeMX / CubeIDE
+.mxproject
+*.tmp
+*.bak

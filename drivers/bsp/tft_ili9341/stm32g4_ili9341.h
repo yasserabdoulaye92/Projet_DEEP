@@ -99,7 +99,7 @@
 #define ILI9341_COLOR_MAGENTA		0xA254
 #define ILI9341_COLOR_GRAY			0x7BEF
 #define ILI9341_COLOR_BROWN			0xBBCA
-
+#define ILI9341_COLOR_PINK          0xFAC0B1
 /* Fond transparent uniquement pour string et char */
 #define ILI9341_TRANSPARENT			0x80000000
 
