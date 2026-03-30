@@ -39,3 +39,14 @@ Pour garantir la stabilité du projet et faciliter le travail en équipe, les r�
 3. **Gestion du fichier `.ioc` :** Le fichier de configuration STM32CubeMX est critique. Toute modification (ajout d'une broche, activation d'un périphérique) nécessite d'en informer l'équipe au préalable pour éviter les conflits de fusion. Une fois le fichier mis à jour sur `main`, les autres membres doivent synchroniser leur branche locale.
 4. **Modularité du code :** Le fichier `main.c` doit être maintenu aussi concis que possible. Les développements doivent être encapsulés dans des modules spécifiques (fichiers `.c` et `.h` dédiés).
 5. **Intégration (Pull Requests) :** Toute fusion vers la branche `main` doit s'effectuer par le biais d'une Pull Request, après validation du code par un ou plusieurs membres de l'équipe.
+6. ##  Conventions de Code (Doxygen)
+Pour que notre projet soit propre et que la documentation se génère automatiquement à la fin, nous utilisons le standard **Doxygen**. 
+**Règle absolue :** Chaque nouveau fichier (`.c` ou `.h`) et chaque nouvelle fonction doit être commenté avec ce format exact.
+### En-tête de fichier (à mettre tout en haut des .c et .h)
+```c
+/**
+ * @file    nom_du_fichier.c
+ * @author  [Ton Prénom]
+ * @brief   Description courte de ce que fait ce fichier (ex: Gestion du capteur BPM).
+ * @date    [Date de création]
+ */
