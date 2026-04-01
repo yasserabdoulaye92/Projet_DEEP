@@ -8,37 +8,30 @@
 #include "TFT_ili9341/stm32g4_ili9341.h"
 #include "TFT_ili9341/stm32g4_xpt2046.h"
 #include <stdio.h>
-
+#include "bpm.h"
 #include "ui.h"
 
-int16_t x_t, y_t;
-char msg[32];
+char time_msg[32];
+char display_msg[32];
+int main(void)
+{
+    // Initialisations
+    HAL_Init();
+    SystemClock_Config();
+    ILI9341_Init();
+    BSP_ADC_init();
+    while (1)
+    {
+        // 1. Calcul du BPM
+        uint8_t bpm = BPM_Calculate();
 
-int main(void) {
-  HAL_Init();
-  SystemClock_Config();
+        // 2. Formatage du texte dans notre variable display_msg
+        sprintf(display_msg, "Pouls: %03d BPM", bpm);
 
-  ILI9341_Init();
-  XPT2046_init();
+        // 3. Affichage
+        ILI9341_Puts(20, 100, display_msg, &Font_16x26, ILI9341_COLOR_RED, ILI9341_COLOR_WHITE);
 
-  DrawMainMenu();
-
-  // CORRECTION ICI : Font_16x26
-  ILI9341_Puts(10, 220, "Touche l'ecran...  ", &Font_16x26, ILI9341_COLOR_GRAY, ILI9341_COLOR_WHITE);
-
-  while (1)
-  {
-    if (XPT2046_getCoordinates(&x_t, &y_t, XPT2046_COORDINATE_SCREEN_RELATIVE)) {
-
-        sprintf(msg, "OK! X:%03d Y:%03d ", x_t, y_t);
-
-        // CORRECTION ICI : Font_16x26
-        ILI9341_Puts(10, 220, msg, &Font_16x26, ILI9341_COLOR_BLACK, ILI9341_COLOR_GREEN);
-
-        HAL_Delay(300);
-
-        // CORRECTION ICI : Font_16x26
-        ILI9341_Puts(10, 220, "Touche l'ecran...  ", &Font_16x26, ILI9341_COLOR_GRAY, ILI9341_COLOR_WHITE);
+        // 4. Pause courte
+        HAL_Delay(20);
     }
-  }
 }
