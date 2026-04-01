@@ -46,6 +46,7 @@
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.30584368" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../core/Inc"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/drivers/bsp/MPU6050}&quot;"/>
 									<listOptionValue builtIn="false" value="../drivers/stm32g4xx_hal/Inc"/>
 									<listOptionValue builtIn="false" value="../drivers/stm32g4xx_hal/Inc/Legacy"/>
 									<listOptionValue builtIn="false" value="../drivers/cmsis/Device/ST/STM32G4xx/Include"/>
@@ -181,5 +182,12 @@
 			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/G431_base"/>
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/G431_base"/>
+		</configuration>
+	</storageModule>
 </cproject>

@@ -1,89 +1,62 @@
-/**
- *******************************************************************************
- * @file 	main.c
- * @author 	jjo
- * @date 	Mar 29, 2024
- * @brief	Fichier principal de votre projet sur carte Nucléo STM32G431KB
- *******************************************************************************
- */
-
+#include "stm32g4xx_hal.h"
 #include "config.h"
-#include "stm32g4_sys.h"
 
-#include "stm32g4_systick.h"
-#include "stm32g4_gpio.h"
-#include "stm32g4_uart.h"
-#include "stm32g4_utils.h"
+// Définitions
+#define BUZZER_PIN  GPIO_PIN_5
+#define BUZZER_GPIO GPIOA
 
-#include <stdio.h>
+/* Prototypes */
+void SystemClock_Config(void); // Définie dans stm32g4_sys.c
+static void MX_GPIO_Init(void);
+void Buzzer_Tone(uint32_t duration_ms); // On simplifie pour le test
 
-#define BLINK_DELAY		100	//ms
-
-void write_LED(bool b)
-{
-	HAL_GPIO_WritePin(LED_GREEN_GPIO, LED_GREEN_PIN, b);
-}
-
-bool char_received(uart_id_t uart_id)
-{
-	if( BSP_UART_data_ready(uart_id) )	/* Si un caractère est reçu sur l'UART 2*/
-	{
-		/* On "utilise" le caractère pour vider le buffer de réception */
-		BSP_UART_get_next_byte(uart_id);
-		return true;
-	}
-	else
-		return false;
-}
-
-void heartbeat(void)
-{
-	while(! char_received(UART2_ID) )
-	{
-		write_LED(true);
-		HAL_Delay(50);
-		write_LED(false);
-		HAL_Delay(1500);
-	}
-}
-
-
-/**
-  * @brief  Point d'entrée de votre application
-  */
 int main(void)
 {
-	/* Cette ligne doit rester la première de votre main !
-	 * Elle permet d'initialiser toutes les couches basses des drivers (Hardware Abstraction Layer),
-	 * condition préalable indispensable à l'exécution des lignes suivantes.
-	 */
-	HAL_Init();
+    /* 1. Initialisations */
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
 
-	/* Initialisation des périphériques utilisés dans votre programme */
-	BSP_GPIO_enable();
-	BSP_UART_init(UART2_ID,115200);
+    /* 2. Boucle principale */
+    while (1)
+    {
+        // On appelle la fonction qui existe vraiment en bas
+        Buzzer_Tone(200);
+        HAL_Delay(800);
+    }
+}
 
-	/* Indique que les printf sont dirigés vers l'UART2 */
-	BSP_SYS_set_std_usart(UART2_ID, UART2_ID, UART2_ID);
+/**
+  * @brief Génère une oscillation de 500Hz (2ms de période)
+  * Cette fréquence est lente mais GARANTIE audible sur un piezo passif.
+  */
+void Buzzer_Tone(uint32_t duration_ms)
+{
+    uint32_t start_time = HAL_GetTick();
 
-	/* Initialisation du port de la led Verte (carte Nucleo) */
-	BSP_GPIO_pin_config(LED_GREEN_GPIO, LED_GREEN_PIN, GPIO_MODE_OUTPUT_PP,GPIO_NOPULL,GPIO_SPEED_FREQ_HIGH,GPIO_NO_AF);
+    while((HAL_GetTick() - start_time) < duration_ms)
+    {
+        HAL_GPIO_WritePin(BUZZER_GPIO, BUZZER_PIN, GPIO_PIN_SET);
+        HAL_Delay(1); // 1ms à l'état haut
+        HAL_GPIO_WritePin(BUZZER_GPIO, BUZZER_PIN, GPIO_PIN_RESET);
+        HAL_Delay(1); // 1ms à l'état bas
+    }
+}
 
-	/* Hello student */
-	printf("Hi <Student>, can you read me?\n");
+/**
+  * @brief Initialisation du GPIO PA5
+  */
+static void MX_GPIO_Init(void)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-	//heartbeat();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
 
-	/* Tâche de fond, boucle infinie, Infinite loop,... quelque soit son nom vous n'en sortirez jamais */
-	while (1)
-	{
+    GPIO_InitStruct.Pin = BUZZER_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 
-		if( char_received(UART2_ID) )
-		{
-			write_LED(true);		/* write_LED? Faites un ctrl+clic dessus pour voir... */
-			HAL_Delay(BLINK_DELAY);	/* ... ça fonctionne aussi avec les macros, les variables. C'est votre nouveau meilleur ami */
-			write_LED(false);
-		}
-
-	}
+    HAL_GPIO_Init(BUZZER_GPIO, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(BUZZER_GPIO, BUZZER_PIN, GPIO_PIN_RESET);
 }
