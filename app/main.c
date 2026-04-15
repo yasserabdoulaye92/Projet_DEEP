@@ -9,6 +9,7 @@
 
 #include "config.h"
 #include "stm32g4_sys.h"
+<<<<<<< Updated upstream
 
 #include "stm32g4_systick.h"
 #include "stm32g4_gpio.h"
@@ -86,4 +87,36 @@ int main(void)
 		}
 
 	}
+=======
+#include "NFC03A1/stm32g4_nfc03a1.h"
+#include "NFC03A1/lib_nfc/lib_pcd/lib_PCD.h"
+#include <stdio.h>
+
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    GPIO_InitStruct.Pin = GPIO_PIN_8;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+    BSP_NFC03A1_Init(PCD);
+    PCD_ProtocolSelect(0x02, PCDPROTOCOL_14443A, NULL, NULL);
+    while (1)
+    {
+        uint8_t status = ConfigManager_TagHunting(TRACK_ALL);
+        if (status == RFTRANS_95HF_SUCCESS_CODE)
+        {
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+            HAL_Delay(2000);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+        }
+
+        HAL_Delay(500);
+    }
+>>>>>>> Stashed changes
 }
