@@ -2,75 +2,46 @@
 #include "TFT_ili9341/stm32g4_ili9341.h"
 #include "TFT_ili9341/stm32g4_xpt2046.h"
 #include <stdio.h>
+#include "menu.h"
 
+/* Prototypes des fonctions système (générées par l'IDE) */
 void SystemClock_Config(void);
-void DrawGrid(void);
-void DetectTouch(void);
-
-// Variables globales pour le tactile
-int16_t x_t, y_t;
-
-// Paramètres de la grille
-#define ROWS 5
-#define COLS 2
-#define CELL_W 100
-#define CELL_H 50
-#define SPACING 15
-
-void DrawGrid(void) {
-    ILI9341_Fill(ILI9341_COLOR_WHITE); // Fond blanc
-    ILI9341_Puts(60, 5, "TEST 10 CASES", &Font_11x18, ILI9341_COLOR_BLACK, ILI9341_COLOR_WHITE);
-
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            uint16_t x = 15 + (j * (CELL_W + SPACING));
-            uint16_t y = 35 + (i * (CELL_H + SPACING));
-            // Dessine le contour de la case
-            ILI9341_DrawRectangle(x, y, CELL_W, CELL_H, ILI9341_COLOR_BLACK);
-
-            // Affiche le numéro de la case
-            char num[3];
-            sprintf(num, "%d", (i * COLS) + j + 1);
-            ILI9341_Puts(x + 40, y + 15, num, &Font_11x18, ILI9341_COLOR_BLACK, ILI9341_COLOR_WHITE);
-        }
-    }
-}
 
 int main(void) {
-    HAL_Init();
-    SystemClock_Config();
+HAL_Init();
 
-    ILI9341_Init();
-    XPT2046_init();
 
-    DrawGrid();
+    // XPT2046_demo();
+   //ILI9341_demo();
+   //ILI9341_DrawRectangle(20, 20, 60, 60, ILI9341_COLOR_BLUE);
+   //ILI9341_Puts(25, 25, "Temperature", &Font_11x18, ILI9341_COLOR_GREEN, ILI9341_COLOR_CYAN);
+   // ILI9341_DrawRectangle(70, 20, 110, 60, ILI9341_COLOR_BLUE);
+   //ILI9341_Puts(75, 25, "Pou", &Font_11x18, ILI9341_COLOR_GREEN, ILI9341_COLOR_CYAN);
+   // ILI9341_DrawRectangle(120, 20, 160, 60, ILI9341_COLOR_BLUE);
+   // ILI9341_Puts(125, 25, "Musique", &Font_11x18, ILI9341_COLOR_GREEN, ILI9341_COLOR_CYAN);
 
-    int16_t x_t, y_t; // Variables pour stocker le toucher
+    //XPT2046_init();	//initialisation du tactile
+	//int16_t x, y;
+
+    //while(1){
+		//if(XPT2046_getMedianCoordinates(&x, &y, XPT2046_COORDINATE_SCREEN_RELATIVE))
+		//{
+
+			//printf("x: %d\ty:%d\n", x, y);
+		//}
+
+   // }
+
+   SystemClock_Config();
+
+    // Initialisation du menu (qui initialise aussi l'écran)
+    MENU_init();
+
 
     while (1) {
-        // Lecture du tactile avec la fonction de ton fichier .h
-        if (XPT2046_getCoordinates(&x_t, &y_t, XPT2046_COORDINATE_SCREEN_RELATIVE)) {
+        // On surveille le tactile en permanence
+        MENU_handler();
 
-            // Parcourir les 10 zones pour voir laquelle est touchée
-            for (int i = 0; i < ROWS; i++) {
-                for (int j = 0; j < COLS; j++) {
-                    uint16_t x_pos = 15 + (j * (CELL_W + SPACING));
-                    uint16_t y_pos = 35 + (i * (CELL_H + SPACING));
-
-                    // Vérification si le doigt est dans cette case
-                    if (x_t > x_pos && x_t < (x_pos + CELL_W) && y_t > y_pos && y_t < (y_pos + CELL_H)) {
-
-                        // Action : La case devient BLEUE quand on appuie
-                        ILI9341_DrawRectangle(x_pos, y_pos, CELL_W, CELL_H, ILI9341_COLOR_BLUE);
-                        ILI9341_Puts(10, 300, "Case Touchee !      ", &Font_11x18, ILI9341_COLOR_BLUE, ILI9341_COLOR_WHITE);
-
-                        HAL_Delay(200); // Petit délai pour voir la couleur
-
-                        // Remettre la case en NOIR après l'appui
-                        ILI9341_DrawRectangle(x_pos, y_pos, CELL_W, CELL_H, ILI9341_COLOR_BLACK);
-                    }
-                }
-            }
-        }
+        HAL_Delay(10);
     }
 }
