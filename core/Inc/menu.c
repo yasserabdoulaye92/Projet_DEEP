@@ -7,7 +7,7 @@
 static Page_t pageActuelle = PAGE_PRINCIPALE;
 
 // Noms pour le menu principal
-static const char* noms_cases[5] = {"Santé", "Horloge", "Cartes", "Games", "Méteo",};
+static const char* noms_cases[5] = {"Time", "Graph", "Calc", "Map", "Music"};
 
 // Couleurs style "Dark Mode" Smartphone
 #define COLOR_APP_BG      0x2104  // Gris anthracite
@@ -22,67 +22,93 @@ void drawbutton(void){
   ILI9341_Puts(x + 15, y + 10, "RETOUR", &Font_11x18, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
 }
 
-// Tableau pour gérer les noms des cases facilement
 
 void MENU_init(void) {
     ILI9341_Init();
     XPT2046_init();
+
+    ILI9341_Fill(ILI9341_COLOR_BLACK);
+    HAL_Delay(100);
+
     MENU_draw();
 }
 
 void MENU_draw(void) {
-    // 1. On force le noir total
-    ILI9341_Fill(0x0000);
-    HAL_Delay(30); // On laisse le temps à l'écran de réagir
+    ILI9341_Fill(ILI9341_COLOR_BLACK);
 
     if (pageActuelle == PAGE_PRINCIPALE) {
-        // TITRE "Menu" en vert (comme sur ta photo)
-        ILI9341_Puts(90, 15, "Menu", &Font_11x18, ILI9341_COLOR_GREEN, 0x0000);
+        // --- TITRE "Menu"
+        ILI9341_Puts(90, 15, "Menu", &Font_11x18, ILI9341_COLOR_GREEN, ILI9341_COLOR_BLACK);
 
-        // --- DESSIN DES 2 PREMIERES ICONES POUR TESTER ---
-        // Icône 1 : Horloge (Jaune)
-        ILI9341_DrawRectangle(60, 60, 50, 50, ILI9341_COLOR_YELLOW);
-        ILI9341_Puts(78, 75, "H", &Font_11x18, ILI9341_COLOR_YELLOW, 0x0000);
-        ILI9341_Puts(65, 115, "Time", &Font_7x10, ILI9341_COLOR_GREEN, 0x0000);
+        // --- DESSIN DES 5 ICONES (Grille 2x3 centrée) ---
+        // On définit la couleur des icônes (Jaune/Vert)
+        uint16_t iconColor = ILI9341_COLOR_YELLOW;
 
-        // Icône 2 : Games (Jaune)
-        ILI9341_DrawRectangle(140, 60, 50, 50, ILI9341_COLOR_YELLOW);
-        ILI9341_Puts(158, 75, "G", &Font_11x18, ILI9341_COLOR_YELLOW, 0x0000);
-        ILI9341_Puts(145, 115, "Game", &Font_7x10, ILI9341_COLOR_GREEN, 0x0000);
+        // Les noms des applications correspondants aux icônes
+        const char* iconNames[5] = {"Time", "Graph", "Calc", "Map", "Music"};
+        // Caractères "icônes" simulés (o=horloge, g=graphe, +=calc, m=carte, ♫=musique)
+        const char iconSymbols[5] = {'o', 'g', '+', 'm', '4'};
+
+        for (int i = 0; i < 5; i++) {
+            // Calcul des positions pour centrer (2 colonnes, 3 lignes)
+            // Colonne 0 : x=60 | Colonne 1 : x=140
+            uint16_t x = 60 + ((i % 2) * 80);
+            // Ligne 0 : y=50 | Ligne 1 : y=110 | Ligne 2 : y=170
+            uint16_t y = 50 + ((i / 2) * 60);
+
+            // A. Le contour de l'icône (Carré Jaune)
+            ILI9341_DrawRectangle(x, y, 50, 50, iconColor);
+
+            // B. Le symbole de l'icône (plus gros, centré dans le carré)
+            // On utilise Font_16x26 pour que ça ressemble à un logo
+            char sym[2] = {iconSymbols[i], '\0'};
+            ILI9341_Puts(x + 15, y + 12, sym, &Font_16x26, iconColor, ILI9341_COLOR_BLACK);
+
+            // C. Le nom de l'application en petit en dessous (Vert)
+            ILI9341_Puts(x + 5, y + 55, (char*)iconNames[i], &Font_7x10, ILI9341_COLOR_GREEN, ILI9341_COLOR_BLACK);
+        }
     }
     else {
-        // --- SOUS-MENU ---
-        ILI9341_Puts(60, 20, "CONTENU", &Font_11x18, ILI9341_COLOR_WHITE, 0x0000);
+        // --- SOUS-MENU -------
+        ILI9341_Puts(70, 20, (char*)noms_cases[pageActuelle - 1], &Font_11x18, ILI9341_COLOR_CYAN, ILI9341_COLOR_BLACK);
+        ILI9341_Puts(40, 100, "CONTENU ACTIF", &Font_11x18, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
 
-        // --- BOUTON RETOUR EN BAS A DROITE ---
-        // On le dessine en GRIS (0x7BEF) pour qu'il soit visible sur le noir
-        ILI9341_DrawFilledRectangle(140, 240, 80, 40, 0x7BEF);
-        ILI9341_Puts(150, 255, "RETOUR", &Font_7x10, 0x0000, 0x7BEF);
+        // BOUTON RETOUR EN BAS A DROITE
+        uint16_t bX = 135, bY = 250, bW = 90, bH = 45;
+        ILI9341_DrawFilledRectangle(bX, bY, bW, bH, ILI9341_COLOR_GRAY); // Button gris
+        ILI9341_Puts(145, 265, "RETOUR", &Font_11x18, ILI9341_COLOR_BLACK, ILI9341_COLOR_GRAY); // Texte en noir
     }
 }
 void MENU_handler(void) {
     int16_t x, y;
+
+    // Si on touche l'écran
     if (XPT2046_getMedianCoordinates(&x, &y, XPT2046_COORDINATE_SCREEN_RELATIVE)) {
+
         if (pageActuelle == PAGE_PRINCIPALE) {
-            // Détection icône Time (60, 60)
-            if (x > 60 && x < 110 && y > 60 && y < 110) {
-                pageActuelle = PAGE_HORLOGE;
-                MENU_draw();
-                HAL_Delay(500);
-            }
-            // Détection icône Games (140, 60)
-            else if (x > 140 && x < 190 && y > 60 && y < 110) {
-                pageActuelle = PAGE_GAMES;
-                MENU_draw();
-                HAL_Delay(500);
+            // Logique de détection pour les 5 ICONES (Grille 2x3 centrée)
+            for (int i = 0; i < 5; i++) {
+                // Calcul des MÊMES coordonnées que dans MENU_draw
+                uint16_t x_icon = 60 + ((i % 2) * 80);
+                uint16_t y_icon = 50 + ((i / 2) * 60);
+
+                // On vérifie si ton doigt est dans le carré de 50x50 pixels
+                if (x > x_icon && x < (x_icon + 50) && y > y_icon && y < (y_icon + 50)) {
+                    // On change de page (i+1 car PAGE_PRINCIPALE = 0)
+                    pageActuelle = (Page_t)(i + 1);
+                    MENU_draw();    // On redessine le sous-menu
+                    HAL_Delay(500); // Anti-rebond généreux
+                    return;
+                }
             }
         }
         else {
-            // BOUTON RETOUR (bas-droite : 140, 240)
-            if (x > 140 && x < 220 && y > 240 && y < 280) {
-                pageActuelle = PAGE_PRINCIPALE;
-                MENU_draw();
-                HAL_Delay(500);
+            // --- LOGIQUE POUR SORTIR  ---
+            // Zone : x entre 135 et 225, y entre 250 et 295
+            if (x > 135 && x < 225 && y > 250 && y < 295) {
+                pageActuelle = PAGE_PRINCIPALE; // Retour au menu
+                MENU_draw();                    // Redessine la grille d'icônes
+                HAL_Delay(500);                 // Anti-rebond
             }
         }
     }
