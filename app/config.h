@@ -45,7 +45,7 @@
 #if USE_ILI9341
     #define USE_XPT2046     1 // Tactile activé
     #define USE_FONT7x10    1 // Petite police [cite: 11, 12]
-    #define USE_FONT11x18   0
+    #define USE_FONT11x18   1
     #define USE_FONT16x26   1 // Grande police pour l'heure [cite: 11, 12]
 #endif
 
