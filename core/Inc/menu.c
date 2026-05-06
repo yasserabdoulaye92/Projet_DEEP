@@ -1,4 +1,5 @@
 #include "menu.h"
+<<<<<<< Updated upstream
 #include <stdio.h>
 
 // Définition des différentes vues possibles
@@ -30,12 +31,126 @@ void MENU_init(void) {
     ILI9341_Fill(ILI9341_COLOR_BLACK);
     HAL_Delay(100);
 
+=======
+#include <string.h>
+
+// Variables globales
+static Page_t pageActuelle = PAGE_MENU;
+static char nom_selection[15] = "";
+static char text_notif[50] = "Aucun message"; // Mémoire pour la notification
+
+#define NB_APPS 6
+#define THEME_COLOR ILI9341_COLOR_GREEN
+
+typedef struct {
+    uint16_t x;
+    uint16_t y;
+    char nom[15];
+    Page_t page_cible;
+    uint8_t icon_id;
+} AppButton_t;
+
+static AppButton_t apps[NB_APPS] = {
+    {25,  35, "Horloge", PAGE_HORLOGE,  0},
+    {135, 35, "Notifs",  PAGE_NOTIF,    1},
+    {245, 35, "Sante",   PAGE_SANTE,    2},
+    {25,  135, "Meteo",   PAGE_METEO,    3},
+    {135, 135, "NFC",     PAGE_NFC,      4},
+    {245, 135, "Options", PAGE_REGLAGES, 5}
+};
+
+// ==========================================
+// NOUVEAU : RÉCEPTION DE LA NOTIFICATION
+// ==========================================
+void MENU_set_notif(char* texte) {
+    // On copie le texte reçu dans notre mémoire (max 49 caractères)
+    strncpy(text_notif, texte, 49);
+    text_notif[49] = '\0'; // Sécurité pour fermer la chaîne
+
+    // Si on est DÉJÀ en train de regarder la page Notifs, on rafraîchit l'écran !
+    if (pageActuelle == PAGE_NOTIF) {
+        MENU_draw();
+    }
+}
+
+// ==========================================
+// FONCTION BLINDÉE POUR REMPLACER LE RECTANGLE
+// ==========================================
+void Ma_Boite(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
+    ILI9341_DrawLine(x, y, x + w, y, color);
+    ILI9341_DrawLine(x, y + h, x + w, y + h, color);
+    ILI9341_DrawLine(x, y, x, y + h, color);
+    ILI9341_DrawLine(x + w, y, x + w, y + h, color);
+}
+
+// ==========================================
+// DESSIN DES ICÔNES
+// ==========================================
+void Dessiner_Icone(uint16_t x, uint16_t y, char* nom, uint8_t id) {
+    Ma_Boite(x, y, 50, 50, THEME_COLOR);
+    Ma_Boite(x + 2, y + 2, 46, 46, THEME_COLOR);
+
+    uint16_t cx = x + 25;
+    uint16_t cy = y + 25;
+
+    switch(id) {
+        case 0: // Horloge
+            ILI9341_DrawCircle(cx, cy, 14, THEME_COLOR);
+            ILI9341_DrawLine(cx, cy, cx, cy - 8, THEME_COLOR);
+            ILI9341_DrawLine(cx, cy, cx + 6, cy + 3, THEME_COLOR);
+            break;
+        case 1: // Notifs
+            Ma_Boite(cx - 8, cy - 12, 16, 24, THEME_COLOR);
+            ILI9341_DrawCircle(cx, cy + 8, 2, THEME_COLOR);
+            ILI9341_DrawLine(cx - 4, cy - 8, cx + 4, cy - 8, THEME_COLOR);
+            break;
+        case 2: // Santé
+            ILI9341_DrawLine(cx, cy - 10, cx, cy + 10, THEME_COLOR);
+            ILI9341_DrawLine(cx - 1, cy - 10, cx - 1, cy + 10, THEME_COLOR);
+            ILI9341_DrawLine(cx + 1, cy - 10, cx + 1, cy + 10, THEME_COLOR);
+            ILI9341_DrawLine(cx - 10, cy, cx + 10, cy, THEME_COLOR);
+            ILI9341_DrawLine(cx - 10, cy - 1, cx + 10, cy - 1, THEME_COLOR);
+            ILI9341_DrawLine(cx - 10, cy + 1, cx + 10, cy + 1, THEME_COLOR);
+            break;
+        case 3: // Météo
+            ILI9341_DrawCircle(cx, cy, 6, THEME_COLOR);
+            ILI9341_DrawLine(cx, cy - 9, cx, cy - 14, THEME_COLOR);
+            ILI9341_DrawLine(cx, cy + 9, cx, cy + 14, THEME_COLOR);
+            ILI9341_DrawLine(cx - 9, cy, cx - 14, cy, THEME_COLOR);
+            ILI9341_DrawLine(cx + 9, cy, cx + 14, cy, THEME_COLOR);
+            break;
+        case 4: // NFC
+            ILI9341_DrawCircle(cx - 6, cy + 6, 2, THEME_COLOR);
+            ILI9341_DrawCircle(cx, cy, 6, THEME_COLOR);
+            ILI9341_DrawCircle(cx + 4, cy - 4, 12, THEME_COLOR);
+            break;
+        case 5: // Options
+            ILI9341_DrawCircle(cx, cy, 8, THEME_COLOR);
+            ILI9341_DrawCircle(cx, cy, 3, THEME_COLOR);
+            ILI9341_DrawLine(cx, cy - 12, cx, cy + 12, THEME_COLOR);
+            ILI9341_DrawLine(cx - 12, cy, cx + 12, cy, THEME_COLOR);
+            break;
+    }
+
+    ILI9341_Puts(x + 2, y + 55, nom, &Font_7x10, THEME_COLOR, ILI9341_COLOR_BLACK);
+}
+
+void MENU_init(void) {
+    #if USE_XPT2046
+        XPT2046_init();
+        HAL_Delay(50);
+    #endif
+
+    ILI9341_Init();
+    HAL_Delay(50);
+>>>>>>> Stashed changes
     MENU_draw();
 }
 
 void MENU_draw(void) {
     ILI9341_Fill(ILI9341_COLOR_BLACK);
 
+<<<<<<< Updated upstream
     if (pageActuelle == PAGE_PRINCIPALE) {
         // --- TITRE "Menu"
         ILI9341_Puts(90, 15, "Menu", &Font_11x18, ILI9341_COLOR_GREEN, ILI9341_COLOR_BLACK);
@@ -112,4 +227,62 @@ void MENU_handler(void) {
             }
         }
     }
+=======
+    if (pageActuelle == PAGE_MENU) {
+        ILI9341_Puts(135, 5, "12:34", &Font_7x10, THEME_COLOR, ILI9341_COLOR_BLACK);
+        ILI9341_DrawLine(10, 20, 310, 20, THEME_COLOR);
+
+        for (int i = 0; i < NB_APPS; i++) {
+            Dessiner_Icone(apps[i].x, apps[i].y, apps[i].nom, apps[i].icon_id);
+        }
+    }
+    else {
+        // --- PAGE D'APPLICATION ---
+        ILI9341_Puts(20, 20, nom_selection, &Font_16x26, THEME_COLOR, ILI9341_COLOR_BLACK);
+        ILI9341_DrawLine(20, 50, 300, 50, THEME_COLOR);
+
+        // AFFICHAGE SPÉCIFIQUE SELON LA PAGE
+        if (pageActuelle == PAGE_NOTIF) {
+            ILI9341_Puts(20, 70, "Nouveau message :", &Font_7x10, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+            // On affiche le texte reçu du téléphone en gros (Police 11x18)
+            ILI9341_Puts(20, 100, text_notif, &Font_11x18, THEME_COLOR, ILI9341_COLOR_BLACK);
+        } else {
+            ILI9341_Puts(20, 80, "> SYS ACTIVE", &Font_7x10, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+        }
+
+        // --- BOUTON RETOUR ANTICHAR ---
+        Ma_Boite(85, 180, 150, 45, THEME_COLOR);
+        Ma_Boite(87, 182, 146, 41, THEME_COLOR);
+        ILI9341_Puts(105, 190, "RETOUR", &Font_16x26, THEME_COLOR, ILI9341_COLOR_BLACK);
+    }
+}
+
+void MENU_handler(void) {
+    #if USE_XPT2046
+        int16_t x, y;
+
+        if (XPT2046_getMedianCoordinates(&x, &y, XPT2046_COORDINATE_SCREEN_RELATIVE)) {
+
+            if (pageActuelle == PAGE_MENU) {
+                for (int i = 0; i < NB_APPS; i++) {
+                    if (x >= apps[i].x && x <= (apps[i].x + 50) &&
+                        y >= apps[i].y && y <= (apps[i].y + 70))
+                    {
+                        strcpy(nom_selection, apps[i].nom);
+                        pageActuelle = apps[i].page_cible;
+                        MENU_draw();
+                        HAL_Delay(300);
+                        return;
+                    }
+                }
+            } else {
+                if (x >= 85 && x <= 235 && y >= 180 && y <= 225) {
+                    pageActuelle = PAGE_MENU;
+                    MENU_draw();
+                    HAL_Delay(300);
+                }
+            }
+        }
+    #endif
+>>>>>>> Stashed changes
 }

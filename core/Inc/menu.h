@@ -5,6 +5,7 @@
 #include "TFT_ili9341/stm32g4_ili9341.h"
 #include "TFT_ili9341/stm32g4_xpt2046.h"
 
+<<<<<<< Updated upstream
 typedef enum {
 	PAGE_PRINCIPALE = 0,
 	PAGE_SANTE,  // Sous-menu pour la case 1
@@ -24,8 +25,29 @@ typedef enum {
 #define GAP        10
 
 // Prototypes des fonctions
+=======
+// Définition stricte des pages de la montre
+typedef enum {
+    PAGE_MENU = 0,
+    PAGE_HORLOGE,
+    PAGE_NOTIF,
+    PAGE_SANTE,
+    PAGE_METEO,
+    PAGE_NFC,
+    PAGE_REGLAGES
+} Page_t;
+
+// Prototypes des fonctions publiques
+>>>>>>> Stashed changes
 void MENU_init(void);
 void MENU_draw(void);
 void MENU_handler(void);
 
+<<<<<<< Updated upstream
 #endif
+=======
+// NOUVEAU : Fonction pour recevoir une notification !
+void MENU_set_notif(char* texte);
+
+#endif /* MENU_H_ */
+>>>>>>> Stashed changes
