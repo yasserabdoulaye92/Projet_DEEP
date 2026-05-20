@@ -1,46 +1,26 @@
+/**
+ * @file    menu.c
+ * @brief   Machine à états de l'affichage et traitement graphique des applications.
+ */
+
 #include "menu.h"
-<<<<<<< Updated upstream
+#include <string.h>
 #include <stdio.h>
 
-// Définition des différentes vues possibles
-
-// Variable qui mémorise la page où l'on se trouve
-static Page_t pageActuelle = PAGE_PRINCIPALE;
-
-// Noms pour le menu principal
-static const char* noms_cases[5] = {"Time", "Graph", "Calc", "Map", "Music"};
-
-// Couleurs style "Dark Mode" Smartphone
-#define COLOR_APP_BG      0x2104  // Gris anthracite
-#define COLOR_APP_BORDER  0x4208  // Gris moyen
-#define COLOR_APP_SELECT  ILI9341_COLOR_BLUE
-
-void drawbutton(void){
- //Bouton en bas de l'écran (Adapté à la rotation paysage)
-  uint16_t x = 70, y = 200, w = 100, h = 35;
-  ILI9341_DrawFilledRectangle(x, y, w, h, ILI9341_COLOR_BLACK);
-  ILI9341_DrawRectangle(x, y, w, h, ILI9341_COLOR_WHITE);
-  ILI9341_Puts(x + 15, y + 10, "RETOUR", &Font_11x18, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
-}
-
-
-void MENU_init(void) {
-    ILI9341_Init();
-    XPT2046_init();
-
-    ILI9341_Fill(ILI9341_COLOR_BLACK);
-    HAL_Delay(100);
-
-=======
-#include <string.h>
-
-// Variables globales
 static Page_t pageActuelle = PAGE_MENU;
 static char nom_selection[15] = "";
-static char text_notif[50] = "Aucun message"; // Mémoire pour la notification
+
+static char text_heure[15] = "--:--:--";
+static char text_notif[50] = "Aucun message";
+static char meteo_etat[15] = "Inconnu";
+static char meteo_temp[10] = "--";
+
+static uint16_t theme_color = ILI9341_COLOR_GREEN;
+
+static uint8_t chrono_actif = 0;
+static uint32_t chrono_secondes = 0;
 
 #define NB_APPS 6
-#define THEME_COLOR ILI9341_COLOR_GREEN
 
 typedef struct {
     uint16_t x;
@@ -51,88 +31,65 @@ typedef struct {
 } AppButton_t;
 
 static AppButton_t apps[NB_APPS] = {
-    {25,  35, "Horloge", PAGE_HORLOGE,  0},
-    {135, 35, "Notifs",  PAGE_NOTIF,    1},
-    {245, 35, "Sante",   PAGE_SANTE,    2},
+    {25,  35,  "Horloge", PAGE_HORLOGE,  0},
+    {135, 35,  "Notifs",  PAGE_NOTIF,    1},
+    {245, 35,  "Sante",   PAGE_SANTE,    2},
     {25,  135, "Meteo",   PAGE_METEO,    3},
     {135, 135, "NFC",     PAGE_NFC,      4},
     {245, 135, "Options", PAGE_REGLAGES, 5}
 };
 
-// ==========================================
-// NOUVEAU : RÉCEPTION DE LA NOTIFICATION
-// ==========================================
-void MENU_set_notif(char* texte) {
-    // On copie le texte reçu dans notre mémoire (max 49 caractères)
-    strncpy(text_notif, texte, 49);
-    text_notif[49] = '\0'; // Sécurité pour fermer la chaîne
-
-    // Si on est DÉJÀ en train de regarder la page Notifs, on rafraîchit l'écran !
-    if (pageActuelle == PAGE_NOTIF) {
-        MENU_draw();
-    }
-}
-
-// ==========================================
-// FONCTION BLINDÉE POUR REMPLACER LE RECTANGLE
-// ==========================================
-void Ma_Boite(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
+static void Ma_Boite(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
     ILI9341_DrawLine(x, y, x + w, y, color);
     ILI9341_DrawLine(x, y + h, x + w, y + h, color);
     ILI9341_DrawLine(x, y, x, y + h, color);
     ILI9341_DrawLine(x + w, y, x + w, y + h, color);
 }
 
-// ==========================================
-// DESSIN DES ICÔNES
-// ==========================================
-void Dessiner_Icone(uint16_t x, uint16_t y, char* nom, uint8_t id) {
-    Ma_Boite(x, y, 50, 50, THEME_COLOR);
-    Ma_Boite(x + 2, y + 2, 46, 46, THEME_COLOR);
-
-    uint16_t cx = x + 25;
-    uint16_t cy = y + 25;
+static void Dessiner_Icone(uint16_t x, uint16_t y, char* nom, uint8_t id) {
+    Ma_Boite(x, y, 50, 50, theme_color);
+    Ma_Boite(x + 2, y + 2, 46, 46, theme_color);
+    uint16_t cx = x + 25; uint16_t cy = y + 25;
 
     switch(id) {
-        case 0: // Horloge
-            ILI9341_DrawCircle(cx, cy, 14, THEME_COLOR);
-            ILI9341_DrawLine(cx, cy, cx, cy - 8, THEME_COLOR);
-            ILI9341_DrawLine(cx, cy, cx + 6, cy + 3, THEME_COLOR);
+        case 0:
+            ILI9341_DrawCircle(cx, cy, 14, theme_color);
+            ILI9341_DrawLine(cx, cy, cx, cy - 8, theme_color);
+            ILI9341_DrawLine(cx, cy, cx + 6, cy + 3, theme_color);
             break;
-        case 1: // Notifs
-            Ma_Boite(cx - 8, cy - 12, 16, 24, THEME_COLOR);
-            ILI9341_DrawCircle(cx, cy + 8, 2, THEME_COLOR);
-            ILI9341_DrawLine(cx - 4, cy - 8, cx + 4, cy - 8, THEME_COLOR);
+        case 1:
+            Ma_Boite(cx - 8, cy - 12, 16, 24, theme_color);
+            ILI9341_DrawCircle(cx, cy + 8, 2, theme_color);
+            ILI9341_DrawLine(cx - 4, cy - 8, cx + 4, cy - 8, theme_color);
             break;
-        case 2: // Santé
-            ILI9341_DrawLine(cx, cy - 10, cx, cy + 10, THEME_COLOR);
-            ILI9341_DrawLine(cx - 1, cy - 10, cx - 1, cy + 10, THEME_COLOR);
-            ILI9341_DrawLine(cx + 1, cy - 10, cx + 1, cy + 10, THEME_COLOR);
-            ILI9341_DrawLine(cx - 10, cy, cx + 10, cy, THEME_COLOR);
-            ILI9341_DrawLine(cx - 10, cy - 1, cx + 10, cy - 1, THEME_COLOR);
-            ILI9341_DrawLine(cx - 10, cy + 1, cx + 10, cy + 1, THEME_COLOR);
+        case 2:
+            ILI9341_DrawLine(cx, cy - 10, cx, cy + 10, theme_color);
+            ILI9341_DrawLine(cx - 1, cy - 10, cx - 1, cy + 10, theme_color);
+            ILI9341_DrawLine(cx + 1, cy - 10, cx + 1, cy + 10, theme_color);
+            ILI9341_DrawLine(cx - 10, cy, cx + 10, cy, theme_color);
+            ILI9341_DrawLine(cx - 10, cy - 1, cx + 10, cy - 1, theme_color);
+            ILI9341_DrawLine(cx - 10, cy + 1, cx + 10, cy + 1, theme_color);
             break;
-        case 3: // Météo
-            ILI9341_DrawCircle(cx, cy, 6, THEME_COLOR);
-            ILI9341_DrawLine(cx, cy - 9, cx, cy - 14, THEME_COLOR);
-            ILI9341_DrawLine(cx, cy + 9, cx, cy + 14, THEME_COLOR);
-            ILI9341_DrawLine(cx - 9, cy, cx - 14, cy, THEME_COLOR);
-            ILI9341_DrawLine(cx + 9, cy, cx + 14, cy, THEME_COLOR);
+        case 3:
+            ILI9341_DrawCircle(cx, cy, 6, theme_color);
+            ILI9341_DrawLine(cx, cy - 9, cx, cy - 14, theme_color);
+            ILI9341_DrawLine(cx, cy + 9, cx, cy + 14, theme_color);
+            ILI9341_DrawLine(cx - 9, cy, cx - 14, cy, theme_color);
+            ILI9341_DrawLine(cx + 9, cy, cx + 14, cy, theme_color);
             break;
-        case 4: // NFC
-            ILI9341_DrawCircle(cx - 6, cy + 6, 2, THEME_COLOR);
-            ILI9341_DrawCircle(cx, cy, 6, THEME_COLOR);
-            ILI9341_DrawCircle(cx + 4, cy - 4, 12, THEME_COLOR);
+        case 4:
+            ILI9341_DrawCircle(cx - 6, cy + 6, 2, theme_color);
+            ILI9341_DrawCircle(cx, cy, 6, theme_color);
+            ILI9341_DrawCircle(cx + 4, cy - 4, 12, theme_color);
             break;
-        case 5: // Options
-            ILI9341_DrawCircle(cx, cy, 8, THEME_COLOR);
-            ILI9341_DrawCircle(cx, cy, 3, THEME_COLOR);
-            ILI9341_DrawLine(cx, cy - 12, cx, cy + 12, THEME_COLOR);
-            ILI9341_DrawLine(cx - 12, cy, cx + 12, cy, THEME_COLOR);
+        case 5:
+            ILI9341_DrawCircle(cx, cy, 8, theme_color);
+            ILI9341_DrawCircle(cx, cy, 3, theme_color);
+            ILI9341_DrawLine(cx, cy - 12, cx, cy + 12, theme_color);
+            ILI9341_DrawLine(cx - 12, cy, cx + 12, cy, theme_color);
             break;
     }
-
-    ILI9341_Puts(x + 2, y + 55, nom, &Font_7x10, THEME_COLOR, ILI9341_COLOR_BLACK);
+    ILI9341_Puts(x + 2, y + 55, nom, &Font_7x10, theme_color, ILI9341_COLOR_BLACK);
 }
 
 void MENU_init(void) {
@@ -140,120 +97,123 @@ void MENU_init(void) {
         XPT2046_init();
         HAL_Delay(50);
     #endif
-
     ILI9341_Init();
     HAL_Delay(50);
->>>>>>> Stashed changes
     MENU_draw();
+}
+
+void MENU_update_time(char* time_str) {
+    strcpy(text_heure, time_str);
+
+    if (pageActuelle == PAGE_MENU) {
+        ILI9341_Puts(125, 5, text_heure, &Font_7x10, theme_color, ILI9341_COLOR_BLACK);
+    }
+
+    if (chrono_actif) {
+        chrono_secondes++;
+    }
+
+    if (pageActuelle == PAGE_HORLOGE) {
+        ILI9341_Puts(80, 55, text_heure, &Font_16x26, theme_color, ILI9341_COLOR_BLACK);
+        char chrono_str[15];
+        sprintf(chrono_str, "%02d:%02d", (int)(chrono_secondes / 60), (int)(chrono_secondes % 60));
+        ILI9341_Puts(115, 125, chrono_str, &Font_16x26, theme_color, ILI9341_COLOR_BLACK);
+    }
+}
+
+void MENU_set_notif(char* texte) {
+    strncpy(text_notif, texte, 49);
+    text_notif[49] = '\0';
+    if (pageActuelle == PAGE_NOTIF) { MENU_draw(); }
+}
+
+void MENU_set_meteo(char* etat, char* temp) {
+    strncpy(meteo_etat, etat, 14);
+    meteo_etat[14] = '\0';
+    strncpy(meteo_temp, temp, 9);
+    meteo_temp[9] = '\0';
+    if (pageActuelle == PAGE_METEO) { MENU_draw(); }
 }
 
 void MENU_draw(void) {
     ILI9341_Fill(ILI9341_COLOR_BLACK);
 
-<<<<<<< Updated upstream
-    if (pageActuelle == PAGE_PRINCIPALE) {
-        // --- TITRE "Menu"
-        ILI9341_Puts(90, 15, "Menu", &Font_11x18, ILI9341_COLOR_GREEN, ILI9341_COLOR_BLACK);
-
-        // --- DESSIN DES 5 ICONES (Grille 2x3 centrée) ---
-        // On définit la couleur des icônes (Jaune/Vert)
-        uint16_t iconColor = ILI9341_COLOR_YELLOW;
-
-        // Les noms des applications correspondants aux icônes
-        const char* iconNames[5] = {"Time", "Graph", "Calc", "Map", "Music"};
-        // Caractères "icônes" simulés (o=horloge, g=graphe, +=calc, m=carte, ♫=musique)
-        const char iconSymbols[5] = {'o', 'g', '+', 'm', '4'};
-
-        for (int i = 0; i < 5; i++) {
-            // Calcul des positions pour centrer (2 colonnes, 3 lignes)
-            // Colonne 0 : x=60 | Colonne 1 : x=140
-            uint16_t x = 60 + ((i % 2) * 80);
-            // Ligne 0 : y=50 | Ligne 1 : y=110 | Ligne 2 : y=170
-            uint16_t y = 50 + ((i / 2) * 60);
-
-            // A. Le contour de l'icône (Carré Jaune)
-            ILI9341_DrawRectangle(x, y, 50, 50, iconColor);
-
-            // B. Le symbole de l'icône (plus gros, centré dans le carré)
-            // On utilise Font_16x26 pour que ça ressemble à un logo
-            char sym[2] = {iconSymbols[i], '\0'};
-            ILI9341_Puts(x + 15, y + 12, sym, &Font_16x26, iconColor, ILI9341_COLOR_BLACK);
-
-            // C. Le nom de l'application en petit en dessous (Vert)
-            ILI9341_Puts(x + 5, y + 55, (char*)iconNames[i], &Font_7x10, ILI9341_COLOR_GREEN, ILI9341_COLOR_BLACK);
-        }
-    }
-    else {
-        // --- SOUS-MENU -------
-        ILI9341_Puts(70, 20, (char*)noms_cases[pageActuelle - 1], &Font_11x18, ILI9341_COLOR_CYAN, ILI9341_COLOR_BLACK);
-        ILI9341_Puts(40, 100, "CONTENU ACTIF", &Font_11x18, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
-
-        // BOUTON RETOUR EN BAS A DROITE
-        uint16_t bX = 135, bY = 250, bW = 90, bH = 45;
-        ILI9341_DrawFilledRectangle(bX, bY, bW, bH, ILI9341_COLOR_GRAY); // Button gris
-        ILI9341_Puts(145, 265, "RETOUR", &Font_11x18, ILI9341_COLOR_BLACK, ILI9341_COLOR_GRAY); // Texte en noir
-    }
-}
-void MENU_handler(void) {
-    int16_t x, y;
-
-    // Si on touche l'écran
-    if (XPT2046_getMedianCoordinates(&x, &y, XPT2046_COORDINATE_SCREEN_RELATIVE)) {
-
-        if (pageActuelle == PAGE_PRINCIPALE) {
-            // Logique de détection pour les 5 ICONES (Grille 2x3 centrée)
-            for (int i = 0; i < 5; i++) {
-                // Calcul des MÊMES coordonnées que dans MENU_draw
-                uint16_t x_icon = 60 + ((i % 2) * 80);
-                uint16_t y_icon = 50 + ((i / 2) * 60);
-
-                // On vérifie si ton doigt est dans le carré de 50x50 pixels
-                if (x > x_icon && x < (x_icon + 50) && y > y_icon && y < (y_icon + 50)) {
-                    // On change de page (i+1 car PAGE_PRINCIPALE = 0)
-                    pageActuelle = (Page_t)(i + 1);
-                    MENU_draw();    // On redessine le sous-menu
-                    HAL_Delay(500); // Anti-rebond généreux
-                    return;
-                }
-            }
-        }
-        else {
-            // --- LOGIQUE POUR SORTIR  ---
-            // Zone : x entre 135 et 225, y entre 250 et 295
-            if (x > 135 && x < 225 && y > 250 && y < 295) {
-                pageActuelle = PAGE_PRINCIPALE; // Retour au menu
-                MENU_draw();                    // Redessine la grille d'icônes
-                HAL_Delay(500);                 // Anti-rebond
-            }
-        }
-    }
-=======
     if (pageActuelle == PAGE_MENU) {
-        ILI9341_Puts(135, 5, "12:34", &Font_7x10, THEME_COLOR, ILI9341_COLOR_BLACK);
-        ILI9341_DrawLine(10, 20, 310, 20, THEME_COLOR);
+        ILI9341_Puts(125, 5, text_heure, &Font_7x10, theme_color, ILI9341_COLOR_BLACK);
+        ILI9341_DrawLine(10, 20, 310, 20, theme_color);
 
         for (int i = 0; i < NB_APPS; i++) {
             Dessiner_Icone(apps[i].x, apps[i].y, apps[i].nom, apps[i].icon_id);
         }
     }
     else {
-        // --- PAGE D'APPLICATION ---
-        ILI9341_Puts(20, 20, nom_selection, &Font_16x26, THEME_COLOR, ILI9341_COLOR_BLACK);
-        ILI9341_DrawLine(20, 50, 300, 50, THEME_COLOR);
+        ILI9341_Puts(20, 10, nom_selection, &Font_16x26, theme_color, ILI9341_COLOR_BLACK);
+        ILI9341_DrawLine(20, 40, 300, 40, theme_color);
 
-        // AFFICHAGE SPÉCIFIQUE SELON LA PAGE
-        if (pageActuelle == PAGE_NOTIF) {
-            ILI9341_Puts(20, 70, "Nouveau message :", &Font_7x10, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
-            // On affiche le texte reçu du téléphone en gros (Police 11x18)
-            ILI9341_Puts(20, 100, text_notif, &Font_11x18, THEME_COLOR, ILI9341_COLOR_BLACK);
-        } else {
-            ILI9341_Puts(20, 80, "> SYS ACTIVE", &Font_7x10, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+        switch(pageActuelle) {
+            case PAGE_HORLOGE:
+                ILI9341_Puts(20, 45, "Heure RTC :", &Font_7x10, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+                ILI9341_Puts(80, 55, text_heure, &Font_16x26, theme_color, ILI9341_COLOR_BLACK);
+
+                ILI9341_Puts(20, 110, "Chronomethre :", &Font_7x10, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+                Ma_Boite(20, 120, 80, 30, theme_color);
+                ILI9341_Puts(28, 130, chrono_actif ? "STOP" : "START", &Font_7x10, theme_color, ILI9341_COLOR_BLACK);
+                Ma_Boite(220, 120, 80, 30, theme_color);
+                ILI9341_Puts(242, 130, "RESET", &Font_7x10, theme_color, ILI9341_COLOR_BLACK);
+                break;
+
+            case PAGE_NOTIF:
+                ILI9341_Puts(20, 55, "Dernier SMS / Message :", &Font_7x10, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+                ILI9341_Puts(20, 85, text_notif, &Font_16x26, theme_color, ILI9341_COLOR_BLACK);
+                break;
+
+            case PAGE_SANTE:
+                ILI9341_Puts(20, 60, "Espace Sante", &Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+                ILI9341_Puts(20, 100, "[ à faire Candice ]", &Font_7x10, theme_color, ILI9341_COLOR_BLACK);
+                break;
+
+            case PAGE_METEO:
+                ILI9341_Puts(20, 50, "Meteo locale :", &Font_7x10, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+                char temp_str[15];
+                sprintf(temp_str, "%s C", meteo_temp);
+                ILI9341_Puts(20, 70, temp_str, &Font_16x26, theme_color, ILI9341_COLOR_BLACK);
+                ILI9341_Puts(20, 105, meteo_etat, &Font_7x10, theme_color, ILI9341_COLOR_BLACK);
+
+                if (strncmp(meteo_etat, "Soleil", 6) == 0) {
+                    ILI9341_DrawCircle(220, 85, 20, ILI9341_COLOR_YELLOW);
+                    for(int a=0; a<360; a+=45) ILI9341_DrawLine(220, 85, 220, 55, ILI9341_COLOR_YELLOW);
+                }
+                else if (strncmp(meteo_etat, "Nuage", 5) == 0) {
+                    ILI9341_DrawCircle(210, 85, 10, ILI9341_COLOR_CYAN);
+                    ILI9341_DrawCircle(230, 85, 15, ILI9341_COLOR_CYAN);
+                    ILI9341_DrawCircle(250, 90, 10, ILI9341_COLOR_CYAN);
+                }
+                else if (strncmp(meteo_etat, "Pluie", 5) == 0) {
+                    ILI9341_DrawLine(210, 80, 200, 100, ILI9341_COLOR_CYAN);
+                    ILI9341_DrawLine(230, 80, 220, 100, ILI9341_COLOR_CYAN);
+                    ILI9341_DrawLine(250, 80, 240, 100, ILI9341_COLOR_CYAN);
+                }
+                break;
+
+            case PAGE_NFC:
+                ILI9341_Puts(20, 60, "Lecteur NFC", &Font_16x26, theme_color, ILI9341_COLOR_BLACK);
+                ILI9341_Puts(20, 100, "Statut : Pret a scanner...", &Font_7x10, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+                break;
+
+            case PAGE_REGLAGES:
+                ILI9341_Puts(20, 50, "Choisir la couleur globale :", &Font_7x10, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+                Ma_Boite(20, 80, 70, 40, ILI9341_COLOR_GREEN);
+                ILI9341_Puts(35, 95, "VERT", &Font_7x10, ILI9341_COLOR_GREEN, ILI9341_COLOR_BLACK);
+                Ma_Boite(125, 80, 70, 40, ILI9341_COLOR_CYAN);
+                ILI9341_Puts(140, 95, "BLEU", &Font_7x10, ILI9341_COLOR_CYAN, ILI9341_COLOR_BLACK);
+                Ma_Boite(230, 80, 70, 40, ILI9341_COLOR_YELLOW);
+                ILI9341_Puts(245, 95, "JAUNE", &Font_7x10, ILI9341_COLOR_YELLOW, ILI9341_COLOR_BLACK);
+                break;
         }
 
-        // --- BOUTON RETOUR ANTICHAR ---
-        Ma_Boite(85, 180, 150, 45, THEME_COLOR);
-        Ma_Boite(87, 182, 146, 41, THEME_COLOR);
-        ILI9341_Puts(105, 190, "RETOUR", &Font_16x26, THEME_COLOR, ILI9341_COLOR_BLACK);
+        Ma_Boite(85, 180, 150, 45, theme_color);
+        Ma_Boite(87, 182, 146, 41, theme_color);
+        ILI9341_Puts(110, 190, "RETOUR", &Font_16x26, theme_color, ILI9341_COLOR_BLACK);
     }
 }
 
@@ -275,14 +235,47 @@ void MENU_handler(void) {
                         return;
                     }
                 }
-            } else {
+            }
+            else {
                 if (x >= 85 && x <= 235 && y >= 180 && y <= 225) {
                     pageActuelle = PAGE_MENU;
                     MENU_draw();
                     HAL_Delay(300);
+                    return;
+                }
+
+                if (pageActuelle == PAGE_HORLOGE) {
+                    if (x >= 20 && x <= 100 && y >= 120 && y <= 150) {
+                        chrono_actif = !chrono_actif;
+                        MENU_draw();
+                        HAL_Delay(300);
+                    }
+                    if (x >= 220 && x <= 300 && y >= 120 && y <= 150) {
+                        chrono_actif = 0;
+                        chrono_secondes = 0;
+                        MENU_draw();
+                        HAL_Delay(300);
+                    }
+                }
+
+                if (pageActuelle == PAGE_REGLAGES) {
+                    if (x >= 20 && x <= 90 && y >= 80 && y <= 120) {
+                        theme_color = ILI9341_COLOR_GREEN;
+                        MENU_draw();
+                        HAL_Delay(300);
+                    }
+                    if (x >= 125 && x <= 195 && y >= 80 && y <= 120) {
+                        theme_color = ILI9341_COLOR_CYAN;
+                        MENU_draw();
+                        HAL_Delay(300);
+                    }
+                    if (x >= 230 && x <= 300 && y >= 80 && y <= 120) {
+                        theme_color = ILI9341_COLOR_YELLOW;
+                        MENU_draw();
+                        HAL_Delay(300);
+                    }
                 }
             }
         }
     #endif
->>>>>>> Stashed changes
 }
