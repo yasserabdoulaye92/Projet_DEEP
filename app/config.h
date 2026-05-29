@@ -23,7 +23,7 @@
 #define USE_RTC             1
 
 /* --- Configuration ADC / DAC --- */
-#define USE_ADC             0
+#define USE_ADC             1
 #define USE_IN1             1 // PA0 (Futur MCP9701)
 #define USE_IN2             0 // Désactivé car PA1 est utilisé par le Buzzer
 #define USE_IN3             1 // PA6
