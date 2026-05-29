@@ -1,96 +1,167 @@
+/**
+******************************************************************************
+* @file main.c
+* @brief Podomètre minimal — STM32G431 + ILI9341 (SPI) + MPU6050 (I2C)
+*
+* Fonctionnement :
+* - Lecture accéléromètre MPU6050 toutes les 20 ms
+* - Détection de pas par seuillage sur la magnitude du vecteur accél.
+* - Affichage du compteur sur écran TFT ILI9341 toutes les 200 ms
+******************************************************************************
+*/
+ 
+/* ==================================================================
+Includes
+================================================================== */
 #include "config.h"
-<<<<<<< Updated upstream
-#include "TFT_ili9341/stm32g4_ili9341.h"
-#include "TFT_ili9341/stm32g4_xpt2046.h"
+#include "tft_ili9341/stm32g4_ili9341.h"
+#include "stm32g4_mpu6050.h"
+#include "stm32g4xx_hal.h"
+#include <math.h>
 #include <stdio.h>
-#include "menu.h"
-
-/* Prototypes des fonctions système (générées par l'IDE) */
+#include <inttypes.h>
+ 
+/* ==================================================================
+Prototypes HAL (générés par CubeMX — ne pas modifier)
+================================================================== */
 void SystemClock_Config(void);
-
-int main(void) {
+static void MX_GPIO_Init(void);
+static void MX_I2C1_Init(void);
+static void MX_SPI1_Init(void);
+ 
+/* ==================================================================
+Variables privées
+================================================================== */
+static MPU6050_t mpu;
+ 
+/* --- Compteur de pas --- */
+static uint32_t stepCount = 0;
+static float lastMagnitude = 0.0f;
+static uint8_t peakDetected = 0;
+static uint32_t lastStepTime = 0;
+ 
+/* --- Timings --- */
+static uint32_t lastReadTick = 0;
+static uint32_t lastDisplayTick = 0;
+static uint32_t lastStepShown = 0xFFFFFFFF;
+ 
+/* ==================================================================
+Dessin initial de l'écran (appelé une seule fois)
+================================================================== */
+static void DrawScreen(void)
+{
+ILI9341_FillScreen(COLOR_BG);
+ 
+/* Titre */
+ILI9341_WriteString(80, 10,
+"PODOMETRE",
+Font_16x26,
+COLOR_TITLE, COLOR_BG);
+ 
+/* Ligne séparatrice */
+ILI9341_DrawHLine(10, 50, SCREEN_WIDTH - 20, COLOR_ACCENT);
+ 
+/* Label fixe */
+ILI9341_WriteString(50, 80,
+"Nombre de pas :",
+Font_11x18,
+COLOR_TEXT, COLOR_BG);
+ 
+/* Cadre du compteur */
+ILI9341_DrawRect(80, 110, 160, 60, COLOR_ACCENT);
+}
+ 
+/* ==================================================================
+Mise à jour de la zone compteur uniquement (pas de redraw complet)
+================================================================== */
+static void RefreshCount(void)
+{
+char buf[12];
+snprintf(buf, sizeof(buf), "%6" PRIu32, stepCount);
+ 
+/* Efface l'ancienne valeur */
+ILI9341_FillRect(82, 112, 156, 56, COLOR_BG);
+ 
+/* Affiche la nouvelle */
+ILI9341_WriteString(90, 125,
+buf,
+Font_16x26,
+COLOR_SUCCESS, COLOR_BG);
+}
+ 
+/* ==================================================================
+Détection de pas (appelée à chaque lecture MPU)
+================================================================== */
+static void DetectStep(float ax, float ay, float az)
+{
+float mag = sqrtf(ax*ax + ay*ay + az*az);
+uint32_t now = HAL_GetTick();
+ 
+/* Front montant : magnitude passe au-dessus du seuil */
+if (mag > PEDO_THRESHOLD && lastMagnitude <= PEDO_THRESHOLD)
+peakDetected = 1;
+ 
+/* Front descendant : on valide le pas */
+if (peakDetected && mag <= PEDO_THRESHOLD)
+{
+if ((now - lastStepTime) >= PEDO_MIN_INTERVAL)
+{
+stepCount++;
+lastStepTime = now;
+}
+peakDetected = 0;
+}
+ 
+lastMagnitude = mag;
+}
+ 
+/* ==================================================================
+main()
+================================================================== */
+int main(void)
+{
+/* --- Init HAL & périphériques --- */
 HAL_Init();
-    MENU_init();
-
-    while (1) {
-        // On surveille le tactile en permanence
-        MENU_handler();
-
-
-=======
-#include "stm32g4_sys.h"
-#include "stm32g4_uart.h"
-#include "TFT_ili9341/stm32g4_ili9341.h"
-#include "menu.h"
-#include <stdio.h>
-#include <string.h>
-
-void Bluetooth_Task(void);
-void Sensors_Send_Task(void);
-
-char buffer_reception[100];
-int index_rec = 0;
-uint32_t dernier_envoi_capteurs = 0;
-
-int main(void) {
-    HAL_Init();
-    SystemClock_Config();
-
-    MENU_init();
-    BSP_UART_init(UART1_ID, 9600); // Initialisation du Bluetooth
-
-    while (1) {
-        MENU_handler();
-        Bluetooth_Task();
-        Sensors_Send_Task();
-    }
+SystemClock_Config();
+MX_GPIO_Init();
+MX_I2C1_Init(); /* MPU6050 sur I2C */
+MX_SPI1_Init(); /* ILI9341 sur SPI */
+ 
+/* --- Init écran --- */
+ILI9341_Init();
+ILI9341_SetRotation(SCREEN_ROTATION);
+ 
+/* --- Init MPU6050 --- */
+MPU6050_Init(&mpu);
+MPU6050_SetAccelRange(&mpu, MPU6050_ACCEL_RANGE);
+ 
+/* --- Dessin initial --- */
+DrawScreen();
+RefreshCount();
+ 
+/* ==============================================================
+Boucle principale
+============================================================== */
+while (1)
+{
+uint32_t now = HAL_GetTick();
+ 
+/* Lecture MPU6050 toutes les 20 ms (~50 Hz) */
+if ((now - lastReadTick) >= PEDO_READ_PERIOD)
+{
+lastReadTick = now;
+MPU6050_Read(&mpu);
+DetectStep(mpu.Ax, mpu.Ay, mpu.Az);
 }
-
-// ==========================================
-// TÂCHE BLUETOOTH (RÉCEPTION)
-// ==========================================
-void Bluetooth_Task(void) {
-    if (BSP_UART_data_ready(UART1_ID)) {
-        char lettre = BSP_UART_getc(UART1_ID);
-
-        // Si on détecte la fin du message (touche Entrée depuis le téléphone)
-        if (lettre == '\n' || lettre == '\r') {
-            if (index_rec > 0) {
-                buffer_reception[index_rec] = '\0'; // On ferme la phrase
-
-                // Si le message commence par "N:"
-                if (strncmp(buffer_reception, "N:", 2) == 0) {
-
-                    // On envoie le texte situé APRÈS les deux premiers caractères ("N:")
-                    // Exemple : "N:Coucou" -> On envoie "Coucou"
-                    MENU_set_notif(&buffer_reception[2]);
-
-                }
-
-                index_rec = 0; // On remet le compteur à zéro pour le prochain message
-            }
-        } else if (index_rec < 99) {
-            buffer_reception[index_rec++] = lettre;
-        }
-    }
+ 
+/* Rafraîchissement affichage toutes les 200 ms
+ou dès qu'un nouveau pas est détecté */
+if ((now - lastDisplayTick) >= PEDO_DISPLAY_PERIOD
+|| stepCount != lastStepShown)
+{
+lastDisplayTick = now;
+lastStepShown = stepCount;
+RefreshCount();
 }
-
-// ==========================================
-// TÂCHE D'ENVOI (VERS LE TÉLÉPHONE)
-// ==========================================
-void Sensors_Send_Task(void) {
-    if (HAL_GetTick() - dernier_envoi_capteurs > 2000) {
-        char buffer_tx[50];
-        int bpm = 72; // Exemple fictif
-        int temp = 37; // Exemple fictif
-
-        sprintf(buffer_tx, "BPM:%d|Temp:%d C\n", bpm, temp);
-
-        for (int i = 0; i < strlen(buffer_tx); i++) {
-            BSP_UART_putc(UART1_ID, buffer_tx[i]);
-        }
-
-        dernier_envoi_capteurs = HAL_GetTick();
->>>>>>> Stashed changes
-    }
+}
 }

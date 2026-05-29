@@ -1,53 +1,21 @@
-#ifndef MENU_H_
-#define MENU_H_
+#ifndef MENU_H
+#define MENU_H
 
-#include "config.h"
-#include "TFT_ili9341/stm32g4_ili9341.h"
-#include "TFT_ili9341/stm32g4_xpt2046.h"
+#include <stdint.h>
 
-<<<<<<< Updated upstream
+/* ------------------------------------------------------------------
+   États de l'application (machine d'états)
+   ------------------------------------------------------------------ */
 typedef enum {
-	PAGE_PRINCIPALE = 0,
-	PAGE_SANTE,  // Sous-menu pour la case 1
-	PAGE_HORLOGE,   // Sous-menu pour la case 2 (etc...)
-	PAGE_CARTES,
-	PAGE_GAMES,
-	PAGE_METEO
+    APP_STATE_MENU = 0,
+    APP_STATE_PODOMETER
+} AppState;
 
-} Page_t;
+/* ------------------------------------------------------------------
+   API publique
+   ------------------------------------------------------------------ */
+void Menu_Init(void);
+void Menu_Draw(void);
+AppState Menu_HandleTouch(void);
 
-#define NB_ROWS    3
-#define NB_COLS    2
-#define CELL_W     100
-#define CELL_H     60
-#define MARGIN_X   15
-#define MARGIN_Y   45
-#define GAP        10
-
-// Prototypes des fonctions
-=======
-// Définition stricte des pages de la montre
-typedef enum {
-    PAGE_MENU = 0,
-    PAGE_HORLOGE,
-    PAGE_NOTIF,
-    PAGE_SANTE,
-    PAGE_METEO,
-    PAGE_NFC,
-    PAGE_REGLAGES
-} Page_t;
-
-// Prototypes des fonctions publiques
->>>>>>> Stashed changes
-void MENU_init(void);
-void MENU_draw(void);
-void MENU_handler(void);
-
-<<<<<<< Updated upstream
-#endif
-=======
-// NOUVEAU : Fonction pour recevoir une notification !
-void MENU_set_notif(char* texte);
-
-#endif /* MENU_H_ */
->>>>>>> Stashed changes
+#endif /* MENU_H */
