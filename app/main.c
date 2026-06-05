@@ -10,15 +10,37 @@
 #include <stdio.h>
 #include <string.h>
 
+/**
+ * @brief Dernier moment où l'écran a été touché.
+ */
 volatile uint32_t dernier_appui_tactile = 0;
+/**
+ * @brief Stocke les messages reçus en Bluetooth.
+ */
 static char buffer_reception[100];
+/**
+ * @brief Position actuelle dans le buffer de réception.
+ */
 static int index_rec = 0;
+/**
+ * @brief Dernière mise à jour de l'heure affichée.
+ */
 static uint32_t dernier_envoi_horloge = 0;
-
+/**
+ * @brief Dernière lecture du capteur cardiaque.
+ */
 static uint32_t dernier_envoi_sante = 0;
+/**
+ * @brief Temps écoulé entre deux battements du cœur.
+ */
 static uint32_t timerCount = 0;
+/**
+ * @brief Fréquence cardiaque actuelle (battements par minute).
+ */
 static int current_bpm = 0;
-
+/**
+ * @brief Gestion de l'horloge RTC.
+ */
 RTC_HandleTypeDef hrtc;
 
 void Bluetooth_Task(void);
@@ -27,6 +49,12 @@ void Health_Task(void);
 void Activer_Horloge_Materielle(void);
 void Backlight_Set(uint8_t pourcentage);
 
+/**
+ * @brief Fonction principale du programme.
+ *
+ * Initialise les périphériques puis exécute les tâches
+ * dans une boucle infinie.
+ */
 int main(void) {
     HAL_Init();
     SystemClock_Config();
@@ -58,7 +86,11 @@ int main(void) {
         Podometer_Update();
     }
 }
-
+ /**
+ * @brief Gère les données du capteur cardiaque.
+ *
+ * Lit la valeur du capteur et calcule le rythme cardiaque.
+ */
 void Health_Task(void) {
     if (HAL_GetTick() - dernier_envoi_sante >= 20) {
         dernier_envoi_sante = HAL_GetTick();
@@ -81,7 +113,12 @@ void Health_Task(void) {
         timerCount += 20;
     }
 }
-
+/**
+ * @brief Gère les messages reçus en Bluetooth.
+ *
+ * Permet de recevoir les notifications, l'heure
+ * et les informations météo.
+ */
 void Bluetooth_Task(void) {
     if (BSP_UART_data_ready(UART1_ID)) {
         char lettre = BSP_UART_getc(UART1_ID);
@@ -103,7 +140,11 @@ void Bluetooth_Task(void) {
         } else if (index_rec < 99) buffer_reception[index_rec++] = lettre;
     }
 }
-
+/**
+ * @brief Met à jour l'heure affichée à l'écran.
+ *
+ * Lit l'heure de la RTC et l'envoie au menu.
+ */
 void Clock_Task(void) {
     if (HAL_GetTick() - dernier_envoi_horloge > 1000) {
         dernier_envoi_horloge = HAL_GetTick();
@@ -112,7 +153,11 @@ void Clock_Task(void) {
         MENU_update_time(time_str);
     }
 }
-
+/**
+ * @brief Active l'horloge matérielle RTC.
+ *
+ * Configure l'horloge utilisée pour garder l'heure.
+ */
 void Activer_Horloge_Materielle(void) {
     RCC_OscInitTypeDef RCC_OscInitStruct = {0};
     RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
@@ -125,5 +170,9 @@ void Activer_Horloge_Materielle(void) {
     PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
     HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit);
 }
-
+/**
+ * @brief Règle la luminosité de l'écran.
+ *
+ * @param pourcentage Luminosité souhaitée (0 à 100).
+ */
 void Backlight_Set(uint8_t pourcentage) { (void)pourcentage; }
