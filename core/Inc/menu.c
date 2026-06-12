@@ -1,6 +1,6 @@
 /**
  * @file    menu.c
- * @author  Candice
+ * @author  Yasser Abdoulaye
  * @brief   Implémentation de l'interface graphique et de la navigation tactile.
  * @details Gère le dessin des différentes pages de la montre connectée sur l'écran TFT,
  * ains que la détection des appuis tactiles pour la navigation.
