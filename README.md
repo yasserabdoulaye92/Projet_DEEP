@@ -1,52 +1,75 @@
-# Projet Smartwatch STM32
+# Projet Smartwatch STM32 (DEEP)
 
-## Description du Projet
-Le projet Smartwatch consiste en la conception et le développement d'une montre connectée dédiée au suivi de l'activité physique et des paramètres de santé. Reposant sur une architecture embarquée autour d'un microcontrôleur STM32, le système interagit avec une application mobile Android. Il offre une solution logicielle et matérielle de bout en bout : de l'acquisition des données physiologiques par les capteurs jusqu'à leur traitement, leur transmission sans fil et leur visualisation sur smartphone.
+## Description du projet
 
-## Fonctionnalités Principales
+Le projet Smartwatch consiste en la conception et le développement d'une montre connectée dédiée au suivi de l'activité physique et des paramètres de santé. Le système repose sur une carte Nucleo STM32G431KB montée sur la carte d'extension DEEP Purple de l'ESEO. La montre communique avec un smartphone par Bluetooth pour recevoir les notifications, l'heure et la météo.
 
-### Système Embarqué (Montre)
-* **Suivi physiologique en temps réel :** Acquisition des données de fréquence cardiaque, de la température corporelle et du nombre de pas (podomètre).
-* **Interface utilisateur :** Affichage de l'heure via une horloge temps réel (RTC), des constantes physiologiques et gestion des notifications sur un écran tactile.
-* **Connectivité :** Transmission des données sans fil via un module Bluetooth et système d'appairage/communication rapide via NFC.
+## Fonctionnalités
 
-### Application Mobile (Android)
-* **Tableau de bord :** Affichage des mesures instantanées transmises par la montre.
-* **Historique et analyse :** Enregistrement et suivi de l'évolution des données de santé dans le temps.
-* **Paramétrage :** Interface de configuration et de contrôle de la smartwatch.
+* **Horloge** : heure tenue par la RTC du STM32, réglable depuis le téléphone, avec un chronomètre.
+* **Santé** : mesure du rythme cardiaque (capteur optique HW-827) et compteur de pas (accéléromètre MPU6050).
+* **Notifications** : réception des messages du téléphone par Bluetooth, avec bip du buzzer.
+* **Météo** : affichage des informations envoyées par le téléphone.
+* **Jeu Snake** : jouable avec les 4 boutons de la carte. Le record est sauvegardé en mémoire flash et survit à l'extinction de la montre.
+* **Réglages** : choix de la couleur du thème de l'interface.
+* En cas de capteur débranché, la page podomètre affiche un diagnostic (état des lignes I2C et scan du bus) au lieu de planter.
 
-## Architecture et Technologies
+## Matériel
 
-* **Microcontrôleur :** Carte de développement STM32G431RB (Programmation en C via STM32CubeIDE).
-* **Affichage :** Écran TFT intégrant un contrôleur tactile.
-* **Périphériques matériels :** RTC, capteur de fréquence cardiaque, capteur de température, accéléromètre.
-* **Développement Mobile :** Environnement Android Studio (Java/Kotlin).
+| Périphérique | Liaison | Broches |
+|---|---|---|
+| Écran TFT ILI9341 + tactile XPT2046 | SPI | PA4–PA8, PB3, PB5, PA11 |
+| Accéléromètre MPU6050 | I2C | PA15 (SCL), PB7 (SDA) |
+| Capteur de pouls HW-827 | ADC | PA0 |
+| Module Bluetooth HC-05 | UART (9600 bauds) | PA9 (TX), PA10 (RX) |
+| Buzzer | GPIO + Timer 6 | PA1 |
+| Boutons (haut, bas, gauche, droite) | GPIO | PB4, PB6, PB0, PA12 |
 
-## Organisation du Dépôt
+## Commandes Bluetooth
 
-Le dépôt est structuré de la manière suivante afin de séparer les différents environnements de développement :
+Les trames se terminent par un retour à la ligne :
 
-* `Firmware_STM32/` : Projet STM32CubeIDE complet (code source embarqué, configuration `.ioc`, pilotes matériels). L'architecture logicielle y est modulaire.
-* `App_Android/` : Code source de l'application mobile Android Studio.
-* `Docs/` : Documentation technique, schémas de câblage et spécifications des composants (datasheets).
+* `N:message` : affiche une notification et fait sonner le buzzer
+* `H:14:30` : règle l'heure de la montre
+* `M:Soleil 25C` : met à jour la météo
 
-## Directives de Contribution et Git Workflow
+## Organisation du dépôt
 
-Pour garantir la stabilité du projet et faciliter le travail en équipe, les règles suivantes s'appliquent :
+* `app/` : point d'entrée du programme (`main.c`) et configuration des modules (`config.h`)
+* `core/Inc/` : modules applicatifs (menu, podomètre, buzzer, snake, capteur de pouls)
+* `drivers/` : BSP fourni par l'ESEO et bibliothèque HAL de ST
+* `docs/` : site de documentation généré par Doxygen
+* `Doxyfile` : configuration Doxygen du projet
 
-1. **Branche principale :** La branche `main` est réservée aux versions stables et fonctionnelles. Aucun développement ne doit être effectué directement sur cette branche.
-2. **Feature Branches :** L'équipe utilise le flux de travail par fonctionnalités. Chaque nouvelle tâche doit faire l'objet d'une branche isolée à partir de `main` (ex. : `feature/capteur-bpm`, `feature/interface-tactile`).
-3. **Gestion du fichier `.ioc` :** Le fichier de configuration STM32CubeMX est critique. Toute modification (ajout d'une broche, activation d'un périphérique) nécessite d'en informer l'équipe au préalable pour éviter les conflits de fusion. Une fois le fichier mis à jour sur `main`, les autres membres doivent synchroniser leur branche locale.
-4. **Modularité du code :** Le fichier `main.c` doit être maintenu aussi concis que possible. Les développements doivent être encapsulés dans des modules spécifiques (fichiers `.c` et `.h` dédiés).
-5. **Intégration (Pull Requests) :** Toute fusion vers la branche `main` doit s'effectuer par le biais d'une Pull Request, après validation du code par un ou plusieurs membres de l'équipe.
-##  Conventions de Code (Doxygen)
-Pour que notre projet soit propre et que la documentation se génère automatiquement à la fin, nous utilisons le standard **Doxygen**. 
-**Règle absolue :** Chaque nouveau fichier (`.c` ou `.h`) et chaque nouvelle fonction doit être commenté avec ce format exact.
-### En-tête de fichier (à mettre tout en haut des .c et .h)
+## Compilation
+
+Le projet se compile avec STM32CubeIDE : importer le dossier comme projet existant, puis Build et Run sur la carte Nucleo branchée en USB.
+
+## Documentation du code
+
+Le code applicatif est commenté au format Doxygen. Pour régénérer le site de documentation, lancer `doxygen Doxyfile` à la racine du dépôt, puis ouvrir `docs/html/index.html`.
+
+## Directives de contribution et Git workflow
+
+1. **Branche principale :** la branche `main` est réservée aux versions stables et fonctionnelles.
+2. **Feature branches :** chaque nouvelle tâche fait l'objet d'une branche dédiée à partir de `main` (ex. : `feature/capteur-bpm`).
+3. **Modularité du code :** le fichier `main.c` reste aussi concis que possible, les développements sont encapsulés dans des modules dédiés (`.c`/`.h`).
+4. **Intégration :** toute fusion vers `main` passe par une Pull Request relue par un membre de l'équipe.
+
+## Conventions de code (Doxygen)
+
+Chaque fichier et chaque fonction est commenté au format Doxygen :
+
 ```c
 /**
  * @file    nom_du_fichier.c
- * @author  [Ton Prénom]
- * @brief   Description courte de ce que fait ce fichier (ex: Gestion du capteur BPM).
- * @date    [Date de création]
+ * @author  Prénom
+ * @brief   Description courte du fichier.
  */
+
+/**
+ * @brief  Ce que fait la fonction.
+ * @param  valeur Description du paramètre.
+ * @return Ce que la fonction renvoie.
+ */
+```

@@ -113,8 +113,10 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     PA15     ------> I2C1_SCL
     PB7     ------> I2C1_SDA
     */
-    BSP_GPIO_pin_config(GPIOA, GPIO_PIN_15, GPIO_MODE_AF_OD, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_AF4_I2C1);
-    BSP_GPIO_pin_config(GPIOB, GPIO_PIN_7, GPIO_MODE_AF_OD, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_AF4_I2C1);
+    /* Pull-ups internes activées en secours : le bus reste lisible même si
+     * les résistances de tirage du module capteur sont absentes/faibles */
+    BSP_GPIO_pin_config(GPIOA, GPIO_PIN_15, GPIO_MODE_AF_OD, GPIO_PULLUP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_AF4_I2C1);
+    BSP_GPIO_pin_config(GPIOB, GPIO_PIN_7, GPIO_MODE_AF_OD, GPIO_PULLUP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_AF4_I2C1);
 
     /* I2C1 clock enable */
     __HAL_RCC_I2C1_CLK_ENABLE();

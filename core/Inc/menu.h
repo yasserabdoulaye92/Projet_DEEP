@@ -23,7 +23,7 @@ typedef enum {
     PAGE_NOTIF,      ///< Affichage de la dernière notification Bluetooth
     PAGE_SANTE,      ///< Hub Santé (Podomètre & Capteur Cardiaque)
     PAGE_METEO,      ///< Affichage des données météo reçues
-    PAGE_NFC,        ///< Page de lecture de badge NFC
+    PAGE_SNAKE,      ///< Jeu Snake (Remplace l'ancienne page NFC)
     PAGE_REGLAGES    ///< Paramètres (Couleur du thème, Luminosité)
 } Page_t;
 
@@ -72,5 +72,17 @@ void MENU_set_meteo(char* infos);
  * @param is_beating Vrai si un pic (battement) est détecté à cet instant.
  */
 void MENU_update_sante(uint16_t adc_val, int bpm, bool is_beating);
+
+/**
+ * @brief  Récupère la page actuellement affichée.
+ * @return L'état courant de l'interface (Page_t).
+ */
+Page_t MENU_Get_Page(void);
+
+/**
+ * @brief  Force le menu à basculer sur une page spécifique.
+ * @param  page L'identifiant de la page à charger.
+ */
+void MENU_Set_Page(Page_t page);
 
 #endif /* MENU_H_ */

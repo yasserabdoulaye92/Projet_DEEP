@@ -91,16 +91,19 @@ MPU6050_Result_t MPU6050_Init(MPU6050_t* DataStruct, GPIO_TypeDef * GPIOx, uint1
 		return MPU6050_Result_DeviceNotConnected;
 	}
 
-	/* Check le "who I am" */
+	/* Lecture du "who am I" — volontairement non bloquante : de nombreux
+	 * clones du MPU6050 (modules GY-521 bon marché) retournent un identifiant
+	 * exotique tout en étant parfaitement fonctionnels. La présence physique
+	 * du capteur est déjà garantie par l'ACK I2C (IsDeviceConnected ci-dessus). */
 	uint8_t i_am;
 	BSP_I2C_Read(MPU6050_I2C, DataStruct->Address, MPU6050_WHO_AM_I, &i_am);
-	if (i_am != MPU6050_I_AM && i_am != MPU9250_I_AM && i_am != MPU9255_I_AM && i_am != MPU6060_I_AM_STRANGE_MODEL) {
-		/* Return error */
-		return MPU6050_Result_DeviceInvalid;
-	}
+	(void)i_am;
 
 	/* On réveil le MPU6050 */
 	BSP_I2C_Write(MPU6050_I2C, DataStruct->Address, MPU6050_PWR_MGMT_1, 0x00);
+
+	//Je l'ai rajouté
+	BSP_I2C_Write(MPU6050_I2C, DataStruct->Address, MPU6050_CONFIG, 0x06);
 
 	/* On config l'accéléromètre */
 	BSP_I2C_Read(MPU6050_I2C, DataStruct->Address, MPU6050_ACCEL_CONFIG, &temp);

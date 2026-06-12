@@ -1,0 +1,47 @@
+## Doxyfile — Projet DEEP Smartwatch STM32G4
+## Génération : doxygen Doxyfile  (depuis la racine du projet)
+## Sortie HTML : docs/html/index.html
+
+PROJECT_NAME           = "Smartwatch DEEP — STM32G4"
+PROJECT_NUMBER         = "v3"
+PROJECT_BRIEF          = "Montre connectée STM32G431 (ILI9341, MPU6050, HW827, BT)"
+OUTPUT_DIRECTORY       = docs
+
+# Sources à documenter
+INPUT                  = app/main.c \
+                         app/config.h \
+                         core/Inc/menu.h \
+                         core/Inc/menu.c \
+                         core/Inc/buzzer.h \
+                         core/Inc/buzzer.c \
+                         core/Inc/podometer.h \
+                         core/Inc/podometer.c \
+                         core/Inc/hw-827.h \
+                         core/Inc/hw-827.c \
+                         core/Inc/snake.h \
+                         core/Inc/snake.c
+
+RECURSIVE              = NO
+FILE_PATTERNS          = *.c *.h
+
+# Extraction
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+
+# Format de sortie
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_OUTPUT            = html
+HTML_COLORSTYLE        = DARK
+
+# Graphes (nécessite Graphviz)
+HAVE_DOT               = NO
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+
+# Langue
+OUTPUT_LANGUAGE        = French
+
+QUIET                  = NO
+WARNINGS               = YES
